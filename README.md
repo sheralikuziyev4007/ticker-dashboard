@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sheralikuziyev4007/ticker-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/sheralikuziyev4007/ticker-dashboard/actions/workflows/ci.yml)
 
-**Демо:** <https://sheralikuziyev4007.github.io/ticker-dashboard/>
+**Демо:** [<https://sheralikuziyev4007.github.io/ticker-dashboard/>](https://ticker-dashboard-zeta.vercel.app/)
 
 Дашборд для отслеживания курсов криптовалют на реальном публичном API
 [CoinGecko](https://www.coingecko.com/en/api) — без моковых данных, без бэкенда.
