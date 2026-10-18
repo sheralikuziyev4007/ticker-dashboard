@@ -1,0 +1,19 @@
+# зависимости и сборка
+node_modules
+dist
+coverage
+
+# окружение и секреты
+.env
+.env.*
+!.env.example
+*.local
+
+# логи и мусор ОС/редакторов
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
