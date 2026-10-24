@@ -9,6 +9,21 @@ const PERIOD_DAYS = {
 }
 
 /**
+ * Путь запроса истории цены. Бросает ошибку при неверном диапазоне дат.
+ * Вынесено отдельно, чтобы им пользовались и одиночный график, и сравнение монет.
+ */
+export function buildHistoryPath(coinId, period, dateRange) {
+  if (dateRange?.from && dateRange?.to) {
+    if (dateRange.from > dateRange.to) {
+      throw new Error('Дата "от" не может быть позже даты "до"')
+    }
+    return `/coins/${coinId}/market_chart/range?vs_currency=usd&from=${dateRange.from}&to=${dateRange.to}`
+  }
+  const days = PERIOD_DAYS[period] || '7'
+  return `/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
+}
+
+/**
  * Загружает исторические данные цены для графика.
  * Если передан dateRange { from, to } (unix seconds) — используется
  * эндпоинт /market_chart/range, иначе — обычный /market_chart с period.
@@ -30,16 +45,7 @@ export function useHistoricalData(coinId, period, dateRange) {
     setError(null)
 
     try {
-      let path
-      if (dateRange?.from && dateRange?.to) {
-        if (dateRange.from > dateRange.to) {
-          throw new Error('Дата "от" не может быть позже даты "до"')
-        }
-        path = `/coins/${coinId}/market_chart/range?vs_currency=usd&from=${dateRange.from}&to=${dateRange.to}`
-      } else {
-        const days = PERIOD_DAYS[period] || '7'
-        path = `/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
-      }
+      const path = buildHistoryPath(coinId, period, dateRange)
 
       const result = await request(path, { signal: controller.signal })
       const prices = result.prices || []

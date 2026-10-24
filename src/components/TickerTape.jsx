@@ -1,11 +1,8 @@
-const priceFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 6,
-})
+import { useCurrency } from '../context/CurrencyContext'
 
 export default function TickerTape({ coins }) {
+  const { formatPrice } = useCurrency()
+
   if (!coins || coins.length === 0) return null
 
   // Дублируем список, чтобы анимация прокрутки была бесшовной (loop -50%).
@@ -30,7 +27,7 @@ export default function TickerTape({ coins }) {
                 {coin.symbol}
               </span>
               <span className="font-mono text-xs text-text-primary tabular-nums">
-                {priceFormatter.format(coin.current_price)}
+                {formatPrice(coin.current_price)}
               </span>
               <span
                 className={`font-mono text-[11px] ${isUp ? 'text-up' : 'text-down'}`}

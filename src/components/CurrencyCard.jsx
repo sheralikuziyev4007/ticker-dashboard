@@ -1,11 +1,7 @@
-const priceFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 6,
-})
+import { useCurrency } from '../context/CurrencyContext'
 
 export default function CurrencyCard({ coin, isFavorite, onToggleFavorite, onClick }) {
+  const { formatPrice, formatCompact } = useCurrency()
   const change = coin.price_change_percentage_24h ?? 0
   const isUp = change >= 0
 
@@ -39,7 +35,7 @@ export default function CurrencyCard({ coin, isFavorite, onToggleFavorite, onCli
         </span>
 
         <span className="block font-mono text-xl text-text-primary mb-1.5 tabular-nums">
-          {priceFormatter.format(coin.current_price)}
+          {formatPrice(coin.current_price)}
         </span>
 
         <span
@@ -49,6 +45,14 @@ export default function CurrencyCard({ coin, isFavorite, onToggleFavorite, onCli
         >
           {isUp ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
         </span>
+
+        {/* Капитализация и объём есть не во всех ответах API — показываем, только если пришли. */}
+        {(coin.market_cap || coin.total_volume) && (
+          <span className="mt-3 flex gap-3 font-mono text-[10px] text-text-faint">
+            {coin.market_cap ? <span>Кап. {formatCompact(coin.market_cap)}</span> : null}
+            {coin.total_volume ? <span>Объём {formatCompact(coin.total_volume)}</span> : null}
+          </span>
+        )}
       </button>
 
       <button

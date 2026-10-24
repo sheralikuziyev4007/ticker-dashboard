@@ -56,16 +56,45 @@ src/
 │   ├── SearchBar.jsx         // поиск монет с debounce
 │   ├── ExportButton.jsx      // экспорт текущих данных графика в CSV
 │   ├── LoadingState.jsx      // skeleton-загрузчик
-│   └── ErrorState.jsx        // сообщение об ошибке + кнопка "Повторить"
+│   ├── ErrorState.jsx        // сообщение об ошибке + кнопка "Повторить"
+│   ├── CompareModal.jsx      // сравнение до 5 монет на одном PriceChart
+│   ├── CurrencySwitcher.jsx  // USD / EUR / RUB / UZS
+│   ├── MarketOverview.jsx    // GlobalStatsCards + FearGreedCard (+ StatCard)
+│   ├── TabBar.jsx            // разделы: Избранное / Рынок / Портфель / Алерты
+│   ├── FavoritesView.jsx     // раздел «Избранное»
+│   ├── MarketView.jsx        // раздел «Рынок»: бесконечная прокрутка, сортировка, фильтры
+│   ├── MarketControls.jsx    // сортировка (кап./24ч/объём) + фильтр Растут/Падают
+│   ├── GainersLosers.jsx     // лидеры роста и падения
+│   ├── InfiniteScrollTrigger.jsx // подгрузка страниц (IntersectionObserver + кнопка)
+│   ├── CoinPicker.jsx        // поиск и выбор монеты
+│   ├── PortfolioTracker.jsx  // раздел «Портфель» (+ PortfolioForm/Summary/Table)
+│   ├── PriceAlerts.jsx       // раздел «Алерты» (+ AlertForm/AlertList/NotificationPermission)
+│   └── AlertToasts.jsx       // уведомления на странице (запасной вариант)
 │   (рядом с компонентами лежат их тесты, например DateRangeFilter.test.jsx)
 ├── hooks/
 │   ├── useCurrencies.js      // список валют, автообновление 60с
 │   ├── useHistoricalData.js  // история цены для графика (period или date range)
 │   ├── useFavorites.js       // избранное в localStorage
-│   └── useDebounce.js        // debounce для поиска
+│   ├── useDebounce.js        // debounce для поиска
+│   ├── useMultiHistoricalData.js // история нескольких монет (сравнение)
+│   ├── useMarketCoins.js     // постраничная загрузка рынка
+│   ├── useGlobalStats.js     // капитализация, объём, доминация BTC
+│   ├── useFearGreed.js       // индекс страха и жадности
+│   ├── useExchangeRates.js   // курсы USD → EUR/RUB/UZS
+│   ├── usePortfolio.js       // портфель в localStorage
+│   ├── usePriceAlerts.js     // алерты в localStorage
+│   └── useAlertWatcher.js    // фоновая проверка алертов раз в минуту
+├── context/
+│   └── CurrencyContext.jsx   // выбранная валюта, курс, форматтеры
 ├── utils/
 │   ├── api.js                // обёртка над fetch + простой кэш
-│   └── exportToCsv.js        // генерация и скачивание CSV через Blob
+│   ├── exportToCsv.js        // генерация и скачивание CSV через Blob
+│   ├── currency.js           // список валют, форматирование сумм
+│   ├── mergeSeries.js        // склейка рядов для сравнения монет
+│   ├── marketSort.js         // сортировка и фильтры
+│   ├── portfolio.js          // расчёт стоимости и прибыли/убытка
+│   ├── alerts.js             // условия срабатывания алертов
+│   └── notify.js             // обёртка над Notification API
 └── App.jsx
 public/favicon.svg
 .github/workflows/
@@ -96,12 +125,26 @@ public/favicon.svg
 - **Ленивая загрузка** — модалка с графиком (и Recharts) подгружается только
   при первом открытии, стартовый бандл остаётся лёгким.
 
+- **Сравнение монет** — кнопка «⇄ Сравнить» в шапке: до 5 монет на одном
+  `PriceChart`, режимы «% изменения» (удобно для монет с разным масштабом цен) и «Цена».
+- **Портфель** — монета, количество и цена покупки; общая стоимость, вложения
+  и прибыль/убыток считаются по текущим ценам. Данные только в `localStorage`.
+- **Ценовые алерты** — условие «цена выше/ниже», проверка раз в минуту в фоне,
+  системное уведомление (Notification API) + toast на странице как запасной вариант.
+- **Валюты** — USD / EUR / RUB / UZS. Данные CoinGecko запрашиваются в USD и
+  конвертируются на клиенте по курсу [open.er-api.com](https://open.er-api.com);
+  если курс не загрузился, используются приблизительные значения (помечено в UI).
+- **Рынок** — топ монет с бесконечной прокруткой (по 50, до 250), сортировка
+  по капитализации / изменению за 24ч / объёму, фильтр «Растут / Падают»,
+  блок лидеров роста и падения. Сортировка работает по уже загруженным монетам.
+- **Обзор рынка** — общая капитализация, объём, доминация BTC и индекс
+  страха и жадности ([alternative.me](https://alternative.me/crypto/fear-and-greed-index/)).
+
 ## Бонус (не обязательно, но заложено в структуру)
 
 Легко добавить: React Query вместо кастомных hooks (интерфейс `useCurrencies`/
-`useHistoricalData` уже разделяет данные и состояние загрузки), сравнение
-нескольких монет на одном `PriceChart` (принять массив coin id вместо одного),
-светлая тема (все цвета — Tailwind-токены в `tailwind.config.js`).
+`useHistoricalData` уже разделяет данные и состояние загрузки), светлая тема
+(все цвета — Tailwind-токены в `tailwind.config.js`).
 
 ## Деплой
 

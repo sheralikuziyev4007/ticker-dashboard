@@ -169,7 +169,115 @@ describe('App smoke test', () => {
     const retryButton = await screen.findByText('Повторить')
     expect(retryButton).toBeInTheDocument()
 
+    const marketCalls = () =>
+      global.fetch.mock.calls.filter(([url]) => String(url).includes('/coins/markets')).length
+    expect(marketCalls()).toBe(1)
+
     await user.click(retryButton)
-    expect(global.fetch).toHaveBeenCalledTimes(2)
+    await waitFor(() => expect(marketCalls()).toBe(2))
+  })
+})
+
+describe('Новые разделы', () => {
+  it('показывает статистику рынка и индекс страха и жадности', async () => {
+    const base = global.fetch
+    global.fetch = vi.fn((url) => {
+      const u = String(url)
+      if (u.includes('/global')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              data: {
+                total_market_cap: { usd: 2.5e12 },
+                total_volume: { usd: 9e10 },
+                market_cap_percentage: { btc: 52.3, eth: 17.1 },
+                market_cap_change_percentage_24h_usd: 1.5,
+              },
+            }),
+        })
+      }
+      if (u.includes('alternative.me')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              data: [
+                { value: '72', value_classification: 'Greed' },
+                { value: '65', value_classification: 'Greed' },
+              ],
+            }),
+        })
+      }
+      return base(url)
+    })
+
+    render(<App />)
+    expect(await screen.findByText('52.3%')).toBeInTheDocument()
+    expect(await screen.findByText('Жадность')).toBeInTheDocument()
+    expect(screen.getByText('72')).toBeInTheDocument()
+  })
+
+  it('переключает валюту: цены показываются в евро', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Bitcoin')
+
+    await user.click(screen.getByRole('button', { name: 'EUR' }))
+    await waitFor(() => {
+      expect(screen.getAllByText(/€/).length).toBeGreaterThan(0)
+    })
+    expect(localStorage.getItem('ticker:currency')).toBe('EUR')
+  })
+
+  it('вкладка «Рынок» показывает лидеров роста и падения', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Bitcoin')
+
+    await user.click(screen.getByRole('tab', { name: 'Рынок' }))
+    expect(await screen.findByText(/Лидеры роста за 24ч/)).toBeInTheDocument()
+    expect(screen.getByText(/Лидеры падения за 24ч/)).toBeInTheDocument()
+  })
+
+  it('создаёт алерт и сохраняет его в localStorage', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Bitcoin')
+
+    await user.click(screen.getByRole('tab', { name: 'Алерты' }))
+    await user.type(screen.getByLabelText('Монета для алерта'), 'doge')
+    await user.click(await screen.findByText('Dogecoin'))
+    await user.type(screen.getByLabelText(/Целевая цена/), '0.5')
+    await user.click(screen.getByRole('button', { name: 'Создать алерт' }))
+
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem('ticker:alerts'))
+      expect(stored).toHaveLength(1)
+      expect(stored[0]).toMatchObject({ coinId: 'dogecoin', direction: 'above', targetUsd: 0.5 })
+    })
+  })
+
+  it('добавляет позицию в портфель и считает прибыль', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Bitcoin')
+
+    await user.click(screen.getByRole('tab', { name: 'Портфель' }))
+    await user.type(screen.getByLabelText('Монета для портфеля'), 'doge')
+    await user.click(await screen.findByText('Dogecoin'))
+    await user.type(screen.getByLabelText(/Количество/), '10')
+    await user.type(screen.getByLabelText(/Цена покупки/), '1')
+    await user.click(screen.getByRole('button', { name: 'Добавить' }))
+
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem('ticker:portfolio'))
+      expect(stored).toHaveLength(1)
+      expect(stored[0]).toMatchObject({ id: 'dogecoin', amount: 10, buyPriceUsd: 1 })
+    })
+    // позиция появилась в таблице, а пустое состояние исчезло
+    await waitFor(() => expect(screen.queryByText('Портфель пуст')).not.toBeInTheDocument())
   })
 })

@@ -1,4 +1,4 @@
-// Единая точка входа для запросов к CoinGecko.
+// Единая точка входа для запросов к CoinGecko и другим публичным API.
 // Публичный API, ключ не требуется для базовых эндпоинтов.
 export const API_BASE = 'https://api.coingecko.com/api/v3'
 
@@ -7,13 +7,18 @@ export const API_BASE = 'https://api.coingecko.com/api/v3'
 const cache = new Map()
 const CACHE_TTL = 30_000 // 30 секунд
 
+/**
+ * path — либо путь CoinGecko ('/coins/markets?...'),
+ * либо абсолютный URL другого API (курсы валют, Fear & Greed).
+ */
 async function request(path, { signal } = {}) {
   const cached = cache.get(path)
   if (cached && Date.now() - cached.time < CACHE_TTL) {
     return cached.data
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { signal })
+  const url = /^https?:\/\//.test(path) ? path : `${API_BASE}${path}`
+  const res = await fetch(url, { signal })
 
   if (!res.ok) {
     if (res.status === 429) {

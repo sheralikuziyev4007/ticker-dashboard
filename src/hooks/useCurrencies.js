@@ -6,14 +6,16 @@ const REFRESH_INTERVAL = 60_000 // 60 секунд, как требует ТЗ
 /**
  * Загружает список валют с курсами и изменением за 24ч.
  * Автообновление каждые 60 секунд + ручной refetch().
+ * enabled=false — не делать запросов (например, портфель пуст).
  */
-export function useCurrencies(ids = []) {
+export function useCurrencies(ids = [], { enabled = true } = {}) {
   const [data, setData] = useState([])
   const [status, setStatus] = useState('loading') // loading | success | refreshing | error
   const [error, setError] = useState(null)
   const abortRef = useRef(null)
 
   const fetchCurrencies = useCallback(async () => {
+    if (!enabled) return
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -26,7 +28,7 @@ export function useCurrencies(ids = []) {
       const params = new URLSearchParams({
         vs_currency: 'usd',
         order: 'market_cap_desc',
-        per_page: '20',
+        per_page: String(Math.max(20, ids.length)),
         page: '1',
         sparkline: 'false',
         price_change_percentage: '24h',
@@ -45,7 +47,7 @@ export function useCurrencies(ids = []) {
       setError(err.message || 'Не удалось загрузить данные')
       setStatus('error')
     }
-  }, [ids.join(',')])
+  }, [ids.join(','), enabled])
 
   useEffect(() => {
     fetchCurrencies()

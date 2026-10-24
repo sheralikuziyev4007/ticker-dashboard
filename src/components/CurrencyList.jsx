@@ -10,6 +10,8 @@ export default function CurrencyList({
   isFavorite,
   onToggleFavorite,
   onSelectCoin,
+  emptyTitle = 'Пока пусто',
+  emptyText = 'Добавьте монеты через поиск, чтобы увидеть их здесь.',
 }) {
   if (status === 'loading') return <LoadingState />
   if (status === 'error') return <ErrorState message={error} onRetry={onRetry} />
@@ -17,8 +19,8 @@ export default function CurrencyList({
   if (coins.length === 0) {
     return (
       <div className="text-center py-14 text-text-muted">
-        <p className="font-display text-text-primary mb-1">Пока пусто</p>
-        <p className="text-sm">Добавьте монеты через поиск, чтобы увидеть их здесь.</p>
+        <p className="font-display text-text-primary mb-1">{emptyTitle}</p>
+        <p className="text-sm">{emptyText}</p>
       </div>
     )
   }
